@@ -9,7 +9,7 @@ function DrugTable() {
 
   useEffect(() => {
     // Fetch table data
-    fetch('http://localhost:3000/')
+    fetch('https://drug-info-backend.onrender.com/api/drugs')
       .then(res => res.json())
       .then(data => {
         const sortedData = data.sort(
@@ -21,7 +21,7 @@ function DrugTable() {
       .catch(err => console.error(err));
 
     // Fetch unique companies for dropdown
-    fetch('http://localhost:3000/companies')
+    fetch('https://drug-info-backend.onrender.com/api/drugs/companies')
       .then(res => res.json())
       .then(data => setCompanies(data))
       .catch(err => console.error(err));
