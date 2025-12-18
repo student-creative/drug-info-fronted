@@ -8,32 +8,59 @@ function DrugTable() {
   const [selectedCompany, setSelectedCompany] = useState('');
 
   useEffect(() => {
-    // Fetch table data
-    fetch('https://drug-info-backend.onrender.com/api/drugs')
-      .then(res => res.json())
-      .then(data => {
-        const sortedData = data.sort(
-          (a, b) => new Date(b.launchDate) - new Date(a.launchDate)
+    const fetchData = async () => {
+      try {
+        // --- Fetch drugs with cache bypass ---
+        const drugsResponse = await fetch(
+          `https://drug-info-backend.onrender.com/api/drugs?_=${Date.now()}`,
+          {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+              'Accept': 'application/json'
+            }
+          }
         );
+
+        if (!drugsResponse.ok) throw new Error(`API Error: ${drugsResponse.status}`);
+
+        const data = await drugsResponse.json();
+
+        // Sort by launch date descending
+        const sortedData = data.sort((a, b) => new Date(b.launchDate) - new Date(a.launchDate));
+
         setDrugs(sortedData);
         setFilteredDrugs(sortedData);
-      })
-      .catch(err => console.error(err));
 
-    // Fetch unique companies for dropdown
-    fetch('https://drug-info-backend.onrender.com/api/drugs/companies')
-      .then(res => res.json())
-      .then(data => setCompanies(data))
-      .catch(err => console.error(err));
+        // --- Fetch companies ---
+        const companiesResponse = await fetch(
+          `https://drug-info-backend.onrender.com/api/drugs/companies?_=${Date.now()}`,
+          {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache', 'Accept': 'application/json' }
+          }
+        );
+
+        if (!companiesResponse.ok) throw new Error(`Companies API Error: ${companiesResponse.status}`);
+
+        const companiesData = await companiesResponse.json();
+        setCompanies(companiesData);
+
+      } catch (error) {
+        console.error("Error fetching API data:", error);
+        alert("Failed to fetch API data. Please check the backend server.");
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleFilterChange = (company) => {
     setSelectedCompany(company);
-    if (!company) {
-      setFilteredDrugs(drugs);
-    } else {
-      setFilteredDrugs(drugs.filter(d => d.company === company));
-    }
+    if (!company) setFilteredDrugs(drugs);
+    else setFilteredDrugs(drugs.filter(d => d.company === company));
   };
 
   return (
@@ -61,8 +88,7 @@ function DrugTable() {
             {filteredDrugs.map((drug, index) => (
               <tr
                 key={index}
-                className={`hover:bg-blue-50 ${selectedCompany === drug.company ? 'bg-blue-100 font-semibold' : ''
-                  }`}
+                className={`hover:bg-blue-50 ${selectedCompany === drug.company ? 'bg-blue-100 font-semibold' : ''}`}
               >
                 <td className="px-4 py-3 border border-gray-300">{index + 1}</td>
                 <td className="px-4 py-3 border border-gray-300">{drug.code}</td>
